@@ -3,6 +3,8 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/data/DroneVehicle-DOTA" />
+      <excludeFolder url="file://$MODULE_DIR$/wheels" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (RGB-T-cross-modality-object-detection)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
