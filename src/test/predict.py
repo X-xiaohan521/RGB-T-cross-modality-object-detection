@@ -1,4 +1,4 @@
-from ultralytics import YOLO
+from src.main.ultralytics import YOLO
 
 if __name__ == "__main__":
     model = YOLO("../../weight/yolo11n-obb.pt")
