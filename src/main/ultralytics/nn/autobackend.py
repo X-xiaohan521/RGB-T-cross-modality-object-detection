@@ -62,7 +62,7 @@ def check_class_names(names: list | dict) -> dict[int, str]:
                 f"{min(names.keys())}-{max(names.keys())} defined in your dataset YAML."
             )
         if isinstance(names[0], str) and names[0].startswith("n0"):  # imagenet class codes, i.e. 'n01440764'
-            names_map = YAML.load(ROOT / "cfg/datasets/ImageNet.yaml")["map"]  # human-readable names
+            names_map = YAML.load_yml(ROOT / "cfg/datasets/ImageNet.yaml")["map"]  # human-readable names
             names = {k: names_map[v] for k, v in names.items()}
     return names
 
@@ -78,7 +78,7 @@ def default_class_names(data: str | Path | None = None) -> dict[int, str]:
     """
     if data:
         try:
-            return YAML.load(check_yaml(data))["names"]
+            return YAML.load_yml(check_yaml(data))["names"]
         except Exception:
             pass
     return {i: f"class{i}" for i in range(999)}  # return default if above errors
@@ -335,7 +335,7 @@ class AutoBackend(nn.Module):
 
             metadata = w.parent / "metadata.yaml"
             if metadata.exists():
-                metadata = YAML.load(metadata)
+                metadata = YAML.load_yml(metadata)
                 batch = metadata["batch"]
                 dynamic = metadata.get("args", {}).get("dynamic", dynamic)
             # OpenVINO inference modes are 'LATENCY', 'THROUGHPUT' (not recommended), or 'CUMULATIVE_THROUGHPUT'
@@ -444,7 +444,7 @@ class AutoBackend(nn.Module):
             LOGGER.info(f"Loading {w} for TensorFlow SavedModel inference...")
             import tensorflow as tf
 
-            model = tf.saved_model.load(w)
+            model = tf.saved_model.load_yml(w)
             metadata = Path(w) / "metadata.yaml"
 
         # TF GraphDef
@@ -626,7 +626,7 @@ class AutoBackend(nn.Module):
             if (found := next(w.rglob("*.axm"), None)) is None:
                 raise FileNotFoundError(f"No .axm file found in: {w}")
 
-            ax_model = op.load(str(found))
+            ax_model = op.load_yml(str(found))
             metadata = found.parent / "metadata.yaml"
 
         # ExecuTorch
@@ -659,7 +659,7 @@ class AutoBackend(nn.Module):
 
         # Load external metadata YAML
         if isinstance(metadata, (str, Path)) and Path(metadata).exists():
-            metadata = YAML.load(metadata)
+            metadata = YAML.load_yml(metadata)
         if metadata and isinstance(metadata, dict):
             for k, v in metadata.items():
                 if k in {"stride", "batch", "channels"}:

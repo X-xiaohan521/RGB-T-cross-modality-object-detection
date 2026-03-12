@@ -80,7 +80,7 @@ class CLIP(TextModel):
             device (torch.device): Device to load the model on.
         """
         super().__init__()
-        self.model, self.image_preprocess = clip.load(size, device=device)
+        self.model, self.image_preprocess = clip.load_yml(size, device=device)
         self.to(device)
         self.device = device
         self.eval()

@@ -20,43 +20,14 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ultralytics import __version__
-from ultralytics.utils import (
+from src.main.ultralytics.utils import (
     DEFAULT_CFG_DICT,
     DEFAULT_CFG_KEYS,
-    LOGGER,
     NUM_THREADS,
-    PYTHON_VERSION,
-    TORCH_VERSION,
-    TORCHVISION_VERSION,
-    WINDOWS,
-    colorstr,
+    colorstr
 )
-from ultralytics.utils.checks import check_version
-from ultralytics.utils.cpu import CPUInfo
-from ultralytics.utils.patches import torch_load
-
-# Version checks (all default to version>=min_version)
-TORCH_1_9 = check_version(TORCH_VERSION, "1.9.0")
-TORCH_1_10 = check_version(TORCH_VERSION, "1.10.0")
-TORCH_1_11 = check_version(TORCH_VERSION, "1.11.0")
-TORCH_1_13 = check_version(TORCH_VERSION, "1.13.0")
-TORCH_2_0 = check_version(TORCH_VERSION, "2.0.0")
-TORCH_2_1 = check_version(TORCH_VERSION, "2.1.0")
-TORCH_2_3 = check_version(TORCH_VERSION, "2.3.0")
-TORCH_2_4 = check_version(TORCH_VERSION, "2.4.0")
-TORCH_2_8 = check_version(TORCH_VERSION, "2.8.0")
-TORCH_2_9 = check_version(TORCH_VERSION, "2.9.0")
-TORCH_2_10 = check_version(TORCH_VERSION, "2.10.0")
-TORCHVISION_0_10 = check_version(TORCHVISION_VERSION, "0.10.0")
-TORCHVISION_0_11 = check_version(TORCHVISION_VERSION, "0.11.0")
-TORCHVISION_0_13 = check_version(TORCHVISION_VERSION, "0.13.0")
-TORCHVISION_0_18 = check_version(TORCHVISION_VERSION, "0.18.0")
-if WINDOWS and check_version(TORCH_VERSION, "==2.4.0"):  # reject version 2.4.0 on Windows
-    LOGGER.warning(
-        "Known issue with torch==2.4.0 on Windows with CPU, recommend upgrading to torch>=2.4.1 to resolve "
-        "https://github.com/ultralytics/ultralytics/issues/15049"
-    )
+from src.main.ultralytics.utils.cpu import CPUInfo
+from src.main.ultralytics.utils.patches import torch_load
 
 
 @contextmanager

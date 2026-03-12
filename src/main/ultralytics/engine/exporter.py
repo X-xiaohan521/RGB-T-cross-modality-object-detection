@@ -727,7 +727,7 @@ class Exporter:
             )
 
         # Checks
-        model_onnx = onnx.load(f)  # load onnx model
+        model_onnx = onnx.load_yml(f)  # load onnx model
 
         # Simplify
         if self.args.simplify:

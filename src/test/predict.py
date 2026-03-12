@@ -1,7 +1,8 @@
-from src.main.ultralytics import YOLO
+from src.main.util.yml2model import *
 
 if __name__ == "__main__":
-    model = YOLO("../../weight/yolo11n-obb.pt")
-    print(model.state_dict())
-    result = model.predict("C:\\Users\dujin\\Documents\\Code\\RGB-T-cross-modality-object-detection\data\DroneVehicle-DOTA\\val\\valimg\\00017.jpg", save=True)
-    print(result)
+    yml_dict = load_yml("../main/config/yolo11-obb.yaml")
+    print(yml_dict)
+
+    model = parse_model(yml_dict, input_channels=10)
+    print(model)

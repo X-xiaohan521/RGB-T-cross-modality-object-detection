@@ -422,7 +422,7 @@ def check_det_dataset(dataset: str, autodownload: bool = True) -> dict[str, Any]
         extract_dir, autodownload = file.parent, False
 
     # Read YAML
-    data = YAML.load(file, append_filename=True)  # dictionary
+    data = YAML.load_yml(file, append_filename=True)  # dictionary
 
     # Checks
     for k in "train", "val":
@@ -636,7 +636,7 @@ class HUBDatasetStats:
             _, data_dir, yaml_path = self._unzip(Path(path))
             try:
                 # Load YAML with checks
-                data = YAML.load(yaml_path)
+                data = YAML.load_yml(yaml_path)
                 data["path"] = ""  # strip path since YAML should be in dataset root for all HUB datasets
                 YAML.save(yaml_path, data)
                 data = check_det_dataset(yaml_path, autodownload)  # dict

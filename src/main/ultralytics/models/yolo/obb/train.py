@@ -67,7 +67,7 @@ class OBBTrainer(yolo.detect.DetectionTrainer):
         """
         model = OBBModel(cfg, nc=self.data["nc"], ch=self.data["channels"], verbose=verbose and RANK == -1)
         if weights:
-            model.load(weights)
+            model.load_yml(weights)
 
         return model
 

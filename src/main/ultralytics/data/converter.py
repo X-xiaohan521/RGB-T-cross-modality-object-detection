@@ -803,7 +803,7 @@ async def convert_ndjson_to_yolo(ndjson_path: str | Path, output_path: str | Pat
     yaml_path = dataset_dir / "data.yaml"
     if yaml_path.is_file():
         try:
-            if YAML.load(yaml_path).get("hash") == _hash:
+            if YAML.load_yml(yaml_path).get("hash") == _hash:
                 return yaml_path
         except Exception:
             pass

@@ -25,23 +25,18 @@ import cv2
 import numpy as np
 import torch
 
-from ultralytics import __version__
-from ultralytics.utils.git import GitRepo
-from ultralytics.utils.patches import imread, imshow, imwrite, torch_save  # for patches
-from ultralytics.utils.tqdm import TQDM  # noqa
-
-# PyTorch Multi-GPU DDP Constants
-RANK = int(os.getenv("RANK", -1))
-LOCAL_RANK = int(os.getenv("LOCAL_RANK", -1))  # https://pytorch.org/docs/stable/elastic/run.html
+from src.main.ultralytics import __version__
+from src.main.ultralytics.utils.git import GitRepo
+from src.main.ultralytics.utils.patches import imread, imshow, imwrite, torch_save  # for patches
+from src.main.ultralytics.utils.tqdm import TQDM  # noqa
 
 # Other Constants
-ARGV = sys.argv or ["", ""]  # sometimes sys.argv = []
+ARGV = sys.argv or ["", ""]  # where ultralytics is invoked
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLO
-ASSETS = ROOT / "assets"  # default images
-ASSETS_URL = "https://github.com/ultralytics/assets/releases/download/v0.0.0"  # assets GitHub URL
-DEFAULT_CFG_PATH = ROOT / "cfg/default.yaml"
+ROOT = FILE.parents[1]  # ultralytics package path
+DEFAULT_CFG_PATH = ROOT / "cfg/default.yaml"  # default config yaml file
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLO multiprocessing threads
+
 AUTOINSTALL = str(os.getenv("YOLO_AUTOINSTALL", True)).lower() == "true"  # global auto-install mode
 VERBOSE = str(os.getenv("YOLO_VERBOSE", True)).lower() == "true"  # global verbose mode
 LOGGING_NAME = "ultralytics"
@@ -409,84 +404,6 @@ def plt_settings(rcparams=None, backend="Agg"):
     return decorator
 
 
-def set_logging(name="LOGGING_NAME", verbose=True):
-    """Set up logging with UTF-8 encoding and configurable verbosity.
-
-    This function configures logging for the Ultralytics library, setting the appropriate logging level and formatter
-    based on the verbosity flag and the current process rank. It handles special cases for Windows environments where
-    UTF-8 encoding might not be the default.
-
-    Args:
-        name (str): Name of the logger.
-        verbose (bool): Flag to set logging level to INFO if True, ERROR otherwise.
-
-    Returns:
-        (logging.Logger): Configured logger object.
-
-    Examples:
-        >>> set_logging(name="ultralytics", verbose=True)
-        >>> logger = logging.getLogger("ultralytics")
-        >>> logger.info("This is an info message")
-
-    Notes:
-        - On Windows, this function attempts to reconfigure stdout to use UTF-8 encoding if possible.
-        - If reconfiguration is not possible, it falls back to a custom formatter that handles non-UTF-8 environments.
-        - The function sets up a StreamHandler with the appropriate formatter and level.
-        - The logger's propagate flag is set to False to prevent duplicate logging in parent loggers.
-    """
-    level = logging.INFO if verbose and RANK in {-1, 0} else logging.ERROR  # rank in world for Multi-GPU trainings
-
-    class PrefixFormatter(logging.Formatter):
-        def format(self, record):
-            """Format log records with prefixes based on level."""
-            # Apply prefixes based on log level
-            if record.levelno == logging.WARNING:
-                prefix = "WARNING" if WINDOWS else "WARNING ⚠️"
-                record.msg = f"{prefix} {record.msg}"
-            elif record.levelno == logging.ERROR:
-                prefix = "ERROR" if WINDOWS else "ERROR ❌"
-                record.msg = f"{prefix} {record.msg}"
-
-            # Handle emojis in message based on platform
-            formatted_message = super().format(record)
-            return emojis(formatted_message)
-
-    formatter = PrefixFormatter("%(message)s")
-
-    # Handle Windows UTF-8 encoding issues
-    if WINDOWS and hasattr(sys.stdout, "encoding") and sys.stdout.encoding != "utf-8":
-        with contextlib.suppress(Exception):
-            # Attempt to reconfigure stdout to use UTF-8 encoding if possible
-            if hasattr(sys.stdout, "reconfigure"):
-                sys.stdout.reconfigure(encoding="utf-8")
-            # For environments where reconfigure is not available, wrap stdout in a TextIOWrapper
-            elif hasattr(sys.stdout, "buffer"):
-                import io
-
-                sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-
-    # Create and configure the StreamHandler with the appropriate formatter and level
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(formatter)
-    stream_handler.setLevel(level)
-
-    # Set up the logger
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(stream_handler)
-    logger.propagate = False
-    return logger
-
-
-# Set logger
-LOGGER = set_logging(LOGGING_NAME, verbose=VERBOSE)  # define globally (used in train.py, val.py, predict.py, etc.)
-logging.getLogger("sentry_sdk").setLevel(logging.CRITICAL + 1)
-
-
-def emojis(string=""):
-    """Return platform-dependent emoji-safe version of string."""
-    return string.encode().decode("ascii", "ignore") if WINDOWS else string
-
 
 class ThreadingLocked:
     """A decorator class for ensuring thread-safe execution of a function or method.
@@ -542,7 +459,7 @@ class YAML:
         SafeDumper: Best available YAML dumper (CSafeDumper if available).
 
     Examples:
-        >>> data = YAML.load("config.yaml")
+        >>> data = YAML.load_yml("config.yaml")
         >>> data["new_value"] = 123
         >>> YAML.save("updated_config.yaml", data)
         >>> YAML.print(data)
@@ -1148,36 +1065,7 @@ def threaded(func):
 
 
 def set_sentry():
-    """Initialize the Sentry SDK for error tracking and reporting.
 
-    Only used if sentry_sdk package is installed and sync=True in settings. Run 'yolo settings' to see and update
-    settings.
-
-    Conditions required to send errors (ALL conditions must be met or no errors will be reported):
-        - sentry_sdk package is installed
-        - sync=True in YOLO settings
-        - pytest is not running
-        - running in a pip package installation
-        - running in a non-git directory
-        - running with rank -1 or 0
-        - online environment
-        - CLI used to run package (checked with 'yolo' as the name of the main CLI command)
-    """
-    if (
-        not SETTINGS["sync"]
-        or RANK not in {-1, 0}
-        or Path(ARGV[0]).name != "yolo"
-        or TESTS_RUNNING
-        or not ONLINE
-        or not IS_PIP_PACKAGE
-        or GIT.is_repo
-    ):
-        return
-    # If sentry_sdk package is not installed then return and do not use Sentry
-    try:
-        import sentry_sdk
-    except ImportError:
-        return
 
     def before_send(event, hint):
         """Modify the event before sending it to Sentry based on specific exception types and messages.
@@ -1202,17 +1090,7 @@ def set_sentry():
         }
         return event
 
-    sentry_sdk.init(
-        dsn="https://888e5a0778212e1d0314c37d4b9aae5d@o4504521589325824.ingest.us.sentry.io/4504521592406016",
-        debug=False,
-        auto_enabling_integrations=False,
-        traces_sample_rate=1.0,
-        release=__version__,
-        environment="runpod" if is_runpod() else "production",
-        before_send=before_send,
-        ignore_errors=[KeyboardInterrupt, FileNotFoundError],
-    )
-    sentry_sdk.set_user({"id": SETTINGS["uuid"]})  # SHA-256 anonymized UUID hash
+
 
 
 class JSONDict(dict):
@@ -1339,7 +1217,7 @@ class SettingsManager(JSONDict):
         import hashlib
         import uuid
 
-        from ultralytics.utils.torch_utils import torch_distributed_zero_first
+        from src.main.ultralytics.utils.torch_utils import torch_distributed_zero_first
 
         root = GIT.root or Path()
         datasets_root = (root.parent if GIT.root and is_dir_writeable(root.parent) else root).resolve()
@@ -1373,15 +1251,6 @@ class SettingsManager(JSONDict):
             "\nUpdate Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. "
             "For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings."
         )
-
-        with torch_distributed_zero_first(LOCAL_RANK):
-            super().__init__(self.file)
-
-            if not self.file.exists() or not self:  # Check if file doesn't exist or is empty
-                LOGGER.info(f"Creating new Ultralytics Settings v{version} file ✅ {self.help_msg}")
-                self.reset()
-
-            self._validate_settings()
 
     def _validate_settings(self):
         """Validate the current settings and reset if necessary."""
@@ -1462,20 +1331,6 @@ def vscode_msg(ext="ultralytics.ultralytics-snippets") -> str:
 PREFIX = colorstr("Ultralytics: ")
 SETTINGS = SettingsManager()  # initialize settings
 PERSISTENT_CACHE = JSONDict(USER_CONFIG_DIR / "persistent_cache.json")  # initialize persistent cache
-DATASETS_DIR = Path(SETTINGS["datasets_dir"])  # global datasets directory
-WEIGHTS_DIR = Path(SETTINGS["weights_dir"])  # global weights directory
-RUNS_DIR = Path(SETTINGS["runs_dir"])  # global runs directory
-ENVIRONMENT = (
-    "Colab"
-    if IS_COLAB
-    else "Kaggle"
-    if IS_KAGGLE
-    else "Jupyter"
-    if IS_JUPYTER
-    else "Docker"
-    if IS_DOCKER
-    else platform.system()
-)
 TESTS_RUNNING = is_pytest_running() or is_github_action_running()
 set_sentry()
 

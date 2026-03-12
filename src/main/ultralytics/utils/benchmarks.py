@@ -297,7 +297,7 @@ class RF100Benchmark:
     @staticmethod
     def fix_yaml(path: Path):
         """Fix the train and validation paths in a given YAML file."""
-        yaml_data = YAML.load(path)
+        yaml_data = YAML.load_yml(path)
         yaml_data["train"] = "train/images"
         yaml_data["val"] = "valid/images"
         YAML.dump(yaml_data, path)
@@ -320,7 +320,7 @@ class RF100Benchmark:
             >>> benchmark.evaluate("path/to/data.yaml", "path/to/val_log.txt", "path/to/eval_log.txt", 0)
         """
         skip_symbols = ["🚀", "⚠️", "💡", "❌"]
-        class_names = YAML.load(yaml_path)["names"]
+        class_names = YAML.load_yml(yaml_path)["names"]
         with open(val_log_file, encoding="utf-8") as f:
             lines = f.readlines()
             eval_lines = []

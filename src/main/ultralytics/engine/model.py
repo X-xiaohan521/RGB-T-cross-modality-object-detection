@@ -275,8 +275,6 @@ class Model(torch.nn.Module):
             >>> model._load("yolo26n.pt")
             >>> model._load("path/to/weights.pth", task="detect")
         """
-        if weights.lower().startswith(("https://", "http://", "rtsp://", "rtmp://", "tcp://", "ul://")):
-            weights = checks.check_file(weights, download_dir=SETTINGS["weights_dir"])  # download and return local file
         weights = checks.check_model_file_from_stem(weights)  # add suffix, i.e. yolo26 -> yolo26n.pt
 
         if str(weights).rpartition(".")[-1] == "pt":
@@ -362,8 +360,8 @@ class Model(torch.nn.Module):
 
         Examples:
             >>> model = Model()
-            >>> model.load("yolo26n.pt")
-            >>> model.load(Path("path/to/weights.pt"))
+            >>> model.load_yml("yolo26n.pt")
+            >>> model.load_yml(Path("path/to/weights.pt"))
         """
         self._check_is_pytorch_model()
         if isinstance(weights, (str, Path)):
