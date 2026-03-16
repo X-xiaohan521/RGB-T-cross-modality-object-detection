@@ -63,7 +63,7 @@ class BaseModel(torch.nn.Module):
         """
         if augment:
             return self._predict_augment(x)
-        return self._predict_once(x, profile, visualize, embed)
+        return self._predict_once(x, profile, embed)
 
     def _predict_once(self, x, profile=False, embed=None):
         """Perform a forward pass through the network.
@@ -405,7 +405,7 @@ class OBBModel(DetectionModel):
         >>> results = model.predict(image_tensor)
     """
 
-    def __init__(self, model, ch=3, nc=None):
+    def __init__(self, model, save, ch=3, nc=None):
         """Initialize YOLO OBB model with given config and parameters.
 
         Args:
@@ -414,6 +414,7 @@ class OBBModel(DetectionModel):
             nc (int, optional): Number of classes.
         """
         super().__init__(model=model, ch=ch, nc=nc)
+        self.save = save
 
     def init_criterion(self):
         """Initialize the loss criterion for the model."""

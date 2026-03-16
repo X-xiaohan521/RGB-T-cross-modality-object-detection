@@ -8,8 +8,8 @@ from src.main.model.YoloOBB import OBBModel
 if __name__ == "__main__":
     # load OBB model
     yml_dict = load_yml("../../config/yolo11-obb.yaml")
-    model, sort = parse_model(yml_dict, input_channels=3)   # model with backbone and head
-    obb = OBBModel(model)
+    model, save = parse_model(yml_dict, input_channels=3)   # model with backbone and head
+    obb = OBBModel(model, save)
     weight = torch.load("../../weight/yolo11n-obb-weight.pt")
     obb.load(weight)
 
@@ -21,6 +21,7 @@ if __name__ == "__main__":
 
     with torch.no_grad():
         img, _, _, _ = val_dataset[0]
+        img = torch.stack([img])
         print(img.shape)
         logits = obb.forward(img)
         print(logits)
