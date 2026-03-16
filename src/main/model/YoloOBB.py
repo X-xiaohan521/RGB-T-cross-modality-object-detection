@@ -1,6 +1,7 @@
 import torch
 
 from main.modules import *
+from main.modules.head import Detect
 from main.modules.loss import *
 from main.util.torch_utils import *
 
@@ -195,8 +196,7 @@ class BaseModel(torch.nn.Module):
             weights (dict | torch.nn.Module): The pre-trained weights to be loaded.
             verbose (bool, optional): Whether to log the transfer progress.
         """
-        model = weights["model"] if isinstance(weights, dict) else weights  # torchvision models are not dicts
-        csd = model.float().state_dict()  # checkpoint state_dict as FP32
+        csd = weights  # checkpoint state_dict as FP32
         updated_csd = intersect_dicts(csd, self.state_dict())  # intersect
         self.load_state_dict(updated_csd, strict=False)  # load
         len_updated_csd = len(updated_csd)
@@ -260,7 +260,7 @@ class DetectionModel(BaseModel):
         >>> results = model.predict(image_tensor)
     """
 
-    def __init__(self, model, ch=3, nc=None):
+    def __init__(self, model: torch.nn.Module, ch=3, nc=None):
         """Initialize the YOLO detection model with the given config and parameters.
 
         Args:
@@ -272,7 +272,7 @@ class DetectionModel(BaseModel):
         super().__init__()
 
         self.model = model
-        self.names = {i: f"{i}" for i in range(nc)}  # default names dict
+        # self.names = {i: f"{i}" for i in range(nc)}  # default names dict
         self.inplace = True
 
         # Build strides

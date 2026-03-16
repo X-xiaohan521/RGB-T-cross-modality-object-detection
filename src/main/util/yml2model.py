@@ -56,7 +56,7 @@ def make_divisible(x: int, divisor):
         divisor = int(divisor.max())  # to int
     return math.ceil(x / divisor) * divisor
 
-def parse_model(model_config_dict, input_channels, verbose=True):
+def parse_model(model_config_dict, input_channels, verbose=True) -> tuple[torch.nn.Sequential, list]:
     """Parse a YOLO model.yaml dictionary into a PyTorch model.
 
     Args:
