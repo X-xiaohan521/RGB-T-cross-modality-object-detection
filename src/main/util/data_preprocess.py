@@ -8,6 +8,16 @@ def extract_points(poly: dict) -> list[tuple, tuple, tuple, tuple]:
         points.append((x, y))
     return points
 
+def absolute2relative(size: tuple[int, int], poly):
+    width, height = size
+    for key, value in poly.items():
+        if key.startswith('x'):
+            value = float(value) / width
+        elif key.startswith('y'):
+            value = float(value) / height
+        poly[key] = value
+    return poly
+
 def dota_polygon_to_yolo_obb(poly: dict, img_w, img_h):
     """
     poly: dict, e.g.
