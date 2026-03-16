@@ -68,7 +68,6 @@ def parse_model(model_config_dict, input_channels, verbose=True):
         (torch.nn.Sequential): PyTorch model.
         (list): Sorted list of layer indices whose outputs need to be saved.
     """
-    import ast
 
     # Args
     max_channels = float("inf")
@@ -76,11 +75,6 @@ def parse_model(model_config_dict, input_channels, verbose=True):
     reg_max = model_config_dict.get("reg_max", 16)
     depth, width, kpt_shape = (model_config_dict.get(x, 1.0) for x in ("depth_multiple", "width_multiple", "kpt_shape"))
     scale = model_config_dict.get("scale")
-
-    if act:
-        Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = torch.nn.SiLU()
-        if verbose:
-            print(f"{colorstr('activation:')} {act}")  # print
 
     if verbose:
         print(f"\n{'':>3}{'from':>20}{'n':>3}{'params':>10}  {'module':<45}{'arguments':<30}")
@@ -145,5 +139,5 @@ def parse_model(model_config_dict, input_channels, verbose=True):
         layers.append(m_)
         if i == 0:
             input_channels = []
-        input_channels.append(*c2)
+        input_channels.append(c2)
     return torch.nn.Sequential(*layers), sorted(save)

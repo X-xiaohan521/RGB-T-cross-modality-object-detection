@@ -1,3 +1,3 @@
-from .ultralytics_conv import *
-from .ultralytics_blocks import *
-from .ultralytics_head import *
+from .conv import *
+from .blocks import *
+from .head import *
