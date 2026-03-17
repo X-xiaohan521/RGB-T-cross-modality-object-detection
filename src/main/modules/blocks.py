@@ -304,7 +304,9 @@ class C2f(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through C2f layer."""
+        # x.shape = (batch, channel, height, width)
         y = list(self.cv1(x).chunk(2, 1))
+        # x.shape = (batch, channel, height, width)
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
 
@@ -1082,7 +1084,7 @@ class C3k2(C2f):
         Args:
             c1 (int): Input channels.
             c2 (int): Output channels.
-            n (int): Number of blocks.
+            n (int): Number of Bottleneck blocks.
             c3k (bool): Whether to use C3k blocks.
             e (float): Expansion ratio.
             attn (bool): Whether to use attention blocks.
