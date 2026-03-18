@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from src.main.modules import Conv, C3k2, SPPF, C2PSA, Concat
+from src.main.modules import Conv, C3k2, SPPF, C2PSA, Concat, OBB
 
 class MyOBB(nn.Module):
     def __init__(self):
@@ -70,8 +70,10 @@ class MyOBB(nn.Module):
         self.concat_neck1_neck8 = Concat(1)
         # x.shape = (batch, 1024, 16, 20)
 
-        self.neck9 = nn.Sequential(C3k2(1024, 512, 2, True, 0.5))
-        # x.shape = (batch, 512, 16, 20)
+        self.neck9 = nn.Sequential(C3k2(1024, 1024, 2, True, 0.25))
+        # x.shape = (batch, 1024, 16, 20)
+
+        self.detect = OBB(ch=(256, 512, 1024))
 
     def forward(self, x):
         backbone1_logits = self.backbone1(x)
@@ -101,7 +103,7 @@ class MyOBB(nn.Module):
         concat_backbone1_neck4_logits = self.concat_backbone1_neck4([backbone1_logits, neck4_logits])
         # concat_backbone1_neck4_logits.shape = (batch, 1024, 64, 80)
 
-        neck5_logits = self.neck5(concat_backbone1_neck4_logits)
+        neck5_logits = self.neck5(concat_backbone1_neck4_logits)  # -> detect
         # neck5_logits.shape = (batch, 256, 64, 80)
 
         neck6_logits = self.neck6(neck5_logits)
@@ -110,7 +112,7 @@ class MyOBB(nn.Module):
         concat_neck3_neck6_logits = self.concat_neck3_neck6([neck3_logits, neck6_logits])
         # concat_neck3_neck6_logits.shape = (batch, 768, 32, 40)
 
-        neck7_logits = self.neck7(concat_neck3_neck6_logits)
+        neck7_logits = self.neck7(concat_neck3_neck6_logits)  # -> detect
         # neck7_logits.shape = (batch, 512, 32, 40)
 
         neck8_logits = self.neck8(neck7_logits)
@@ -119,10 +121,16 @@ class MyOBB(nn.Module):
         concat_neck1_neck8_logits = self.concat_neck1_neck8([neck8_logits, neck1_logits])
         # concat_neck1_neck8_logits.shape = (batch, 1024, 16, 20)
 
-        neck9_logits = self.neck9(concat_neck1_neck8_logits)
-        # neck7_logits.shape = (batch, 512, 16, 20)
+        neck9_logits = self.neck9(concat_neck1_neck8_logits)  # -> detect
+        # neck7_logits.shape = (batch, 1024, 16, 20)
 
-        return neck9_logits
+        logits = self.detect([
+            neck5_logits,   # 256
+            neck7_logits,   # 512
+            neck9_logits   # 1024
+        ])
+
+        return logits
 
 if __name__ == '__main__':
     model = MyOBB()

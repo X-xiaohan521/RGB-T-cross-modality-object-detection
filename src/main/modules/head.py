@@ -5,6 +5,7 @@ import torch
 from torch import nn
 
 from main.modules import *
+from main.modules import Conv, DWConv
 from main.util.tal import make_anchors, dist2bbox, dist2rbox
 
 
