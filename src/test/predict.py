@@ -1,18 +1,18 @@
+from collections import OrderedDict
+
 import torch
 from torchvision import transforms
 
 from main.dataset.DroneVehicleYoloDataset import DroneVehicleYoloDataset
 from main.model.MyOBB import MyOBB
 from src.main.util.yml2model import *
-from src.main.model.YoloOBB import OBBModel
 
 if __name__ == "__main__":
     # load OBB model
-    # yml_dict = load_yml("../../config/yolo11-obb.yaml")
-    # model, save = parse_model(yml_dict, input_channels=3)   # model with backbone and head
     obb = MyOBB()
-    # weight = torch.load("../../weight/yolo11n-obb-weight.pt")
-    # obb.load(weight)
+    weights: OrderedDict = torch.load("../../weight/yolo11l-obb-weight.pt")
+    obb.load_backbone_weights(weights)
+    obb.load_neck_weights(weights)
 
     # prepare dataset
     val_dataset = DroneVehicleYoloDataset("../../data/DroneVehicle-DOTA/val",
@@ -26,3 +26,11 @@ if __name__ == "__main__":
         print(img.shape)
         logits = obb.forward(img)
         print(logits)
+        '''
+        {
+            'boxes': tensor.shape(batch, 64, 6720)   6720：所有 feature map 展平后的总点数
+            'scores': tensor.shape(batch, 80, 6720),   80：类别数
+            'feats': [tensor.shape(batch, 256, 64, 80), tensor.shape(batch, 512, 32, 40), tensor.shape(batch, 1024, 16, 20)],
+            'angle': tensor.shape(batch, 1, 6720)
+        }
+        '''
