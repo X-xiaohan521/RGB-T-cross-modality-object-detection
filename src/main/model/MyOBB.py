@@ -36,7 +36,7 @@ class MyOBB(nn.Module):
                                        # x.shape = (batch, 512, 16, 20)
                                    )
 
-        self.neck1 = nn.Sequential(SPPF(512, 512), C2PSA(512, 512))
+        self.neck1 = nn.Sequential(SPPF(512, 512), C2PSA(512, 512, 2))
         # x.shape = (batch, 512, 16, 20)
 
         self.neck2 = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'))
