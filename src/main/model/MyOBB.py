@@ -3,7 +3,7 @@ from collections import OrderedDict
 import torch
 from torch import nn
 
-from src.main.modules import Conv, C3k2, SPPF, C2PSA, Concat, OBB
+from src.main.modules import Conv, C3k2, SPPF, C2PSA, Concat, OBB, v8OBBLoss
 
 class MyOBB(nn.Module):
     def __init__(self):
@@ -72,12 +72,14 @@ class MyOBB(nn.Module):
         self.concat_neck1_neck8 = Concat(1)
         # x.shape = (batch, 1024, 16, 20)
 
-        self.neck9 = nn.Sequential(C3k2(1024, 1024, 2, True, 0.25))
+        self.neck9 = nn.Sequential(C3k2(1024, 512, 2, True, 0.5))
         # x.shape = (batch, 1024, 16, 20)
 
-        self.detect = OBB(ch=(256, 512, 1024))
+        self.detect = OBB(ch=(256, 512, 512))
 
-    def forward(self, x):
+        # self.loss = v8OBBLoss(self)
+
+    def forward(self, x, label=None):
         backbone1_logits = self.backbone1(x)
         # backbone1_logits.shape = (batch, 512, 64, 80)
 
@@ -132,7 +134,14 @@ class MyOBB(nn.Module):
             neck9_logits   # 1024
         ])
 
-        return logits
+        if label is not None:
+            loss = self.loss.loss(logits, x)
+            return {
+                "logits": logits,
+                "loss": loss
+            }
+
+        return {"logits": logits}
 
     def load_backbone_weights(self, pretrained_weight_dict: OrderedDict, verbose: bool = True):
         """
